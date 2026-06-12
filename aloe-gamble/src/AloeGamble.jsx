@@ -530,22 +530,49 @@ function BaeMinji({ size = 40 }) {
       role="img"
       aria-label="배민지"
     >
-      <ellipse cx="32" cy="38" rx="22" ry="20" fill="#8a5a3c" />
-      <ellipse cx="32" cy="46" rx="16" ry="12" fill="#c98a5e" />
-      <circle cx="23" cy="32" r="4" fill="#2c2c2a" />
-      <circle cx="41" cy="32" r="4" fill="#2c2c2a" />
-      <circle cx="24" cy="31" r="1.2" fill="#fff" />
-      <circle cx="42" cy="31" r="1.2" fill="#fff" />
-      <ellipse cx="32" cy="42" rx="5" ry="3.5" fill="#4a1b0c" />
-      <path
-        d="M27 47 Q32 51 37 47"
-        stroke="#4a1b0c"
-        strokeWidth="2"
-        fill="none"
-        strokeLinecap="round"
+      <ellipse cx="32" cy="36" rx="22" ry="19" fill="#f0997b" />
+      <ellipse cx="22" cy="20" rx="6" ry="7" fill="#f0997b" />
+      <ellipse cx="42" cy="20" rx="6" ry="7" fill="#f5c4b3" />
+      <ellipse cx="32" cy="40" rx="9" ry="6" fill="#d85a30" />
+      <circle cx="28" cy="40" r="1.6" fill="#993c1d" />
+      <circle cx="36" cy="40" r="1.6" fill="#993c1d" />
+      <circle cx="22" cy="30" r="3.5" fill="#2c2c2a" />
+      <circle cx="42" cy="30" r="3.5" fill="#2c2c2a" />
+      <circle cx="23" cy="29" r="1" fill="#fff" />
+      <circle cx="43" cy="29" r="1" fill="#fff" />
+    </svg>
+  );
+}
+
+function PinkSausage({ size = 40 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      role="img"
+      aria-label="핑크 소시지"
+    >
+      <rect
+        x="10"
+        y="24"
+        width="44"
+        height="16"
+        rx="8"
+        fill="#ed93b1"
+        transform="rotate(-15 32 32)"
       />
-      <ellipse cx="14" cy="22" rx="5" ry="7" fill="#8a5a3c" />
-      <ellipse cx="50" cy="22" rx="5" ry="7" fill="#8a5a3c" />
+      <rect
+        x="10"
+        y="24"
+        width="44"
+        height="6"
+        rx="3"
+        fill="#f4c0d1"
+        transform="rotate(-15 32 32)"
+      />
+      <circle cx="16" cy="36" r="4" fill="#d4537e" />
+      <circle cx="48" cy="20" r="4" fill="#d4537e" />
     </svg>
   );
 }
@@ -553,11 +580,14 @@ function BaeMinji({ size = 40 }) {
 const MOLE_ENTRY_COST = 500;
 const MOLE_GAME_SECONDS = 15;
 const MOLE_REWARD_PER_HIT = 150;
+const MOLE_PENALTY_PER_MISS = 150;
+const SAUSAGE_CHANCE = 0.35;
 
 function MoleGame({ balance, adjustBalance, setMessage, setAloeFace }) {
   const [phase, setPhase] = useState("idle"); // idle | playing | done
-  const [holes, setHoles] = useState(Array(9).fill(false));
+  const [holes, setHoles] = useState(Array(9).fill(null)); // null | "pig" | "sausage"
   const [score, setScore] = useState(0);
+  const [misses, setMisses] = useState(0);
   const [timeLeft, setTimeLeft] = useState(MOLE_GAME_SECONDS);
 
   useEffect(() => {
@@ -576,9 +606,9 @@ function MoleGame({ balance, adjustBalance, setMessage, setAloeFace }) {
     const spawnDelay = 350 + Math.random() * 350;
     const t = setTimeout(() => {
       setHoles((prev) => {
-        const next = Array(9).fill(false);
+        const next = Array(9).fill(null);
         const idx = Math.floor(Math.random() * 9);
-        next[idx] = true;
+        next[idx] = Math.random() < SAUSAGE_CHANCE ? "sausage" : "pig";
         return next;
       });
     }, spawnDelay);
@@ -590,22 +620,30 @@ function MoleGame({ balance, adjustBalance, setMessage, setAloeFace }) {
     if (balance < MOLE_ENTRY_COST) return;
     adjustBalance(-MOLE_ENTRY_COST);
     setScore(0);
+    setMisses(0);
     setTimeLeft(MOLE_GAME_SECONDS);
-    setHoles(Array(9).fill(false));
+    setHoles(Array(9).fill(null));
     setPhase("playing");
-    setMessage("배민지를 빠르게 잡아보세요!");
+    setMessage("배민지(돼지)만 잡고, 핑크 소시지는 피하세요!");
     setAloeFace("idle");
   }
 
   function finishGame() {
     setPhase("done");
-    setHoles(Array(9).fill(false));
+    setHoles(Array(9).fill(null));
     const reward = score * MOLE_REWARD_PER_HIT;
-    if (reward > 0) {
-      adjustBalance(reward);
+    const penalty = misses * MOLE_PENALTY_PER_MISS;
+    const netChange = reward - penalty;
+    if (netChange !== 0) {
+      adjustBalance(netChange);
     }
-    const net = reward - MOLE_ENTRY_COST;
-    if (net > 0) {
+    const net = reward - penalty - MOLE_ENTRY_COST;
+    if (misses > 0) {
+      setMessage(
+        `배민지 ${score}번, 소시지 ${misses}번! ${penalty.toLocaleString()}원을 잃었어요`
+      );
+      setAloeFace("smug");
+    } else if (net > 0) {
       setMessage(`${score}번 잡았어요! ${reward.toLocaleString()}원 획득!`);
       setAloeFace("sad");
     } else if (net === 0) {
@@ -619,40 +657,56 @@ function MoleGame({ balance, adjustBalance, setMessage, setAloeFace }) {
 
   function whack(idx) {
     if (phase !== "playing" || !holes[idx]) return;
-    setScore((s) => s + 1);
+    if (holes[idx] === "pig") {
+      setScore((s) => s + 1);
+    } else {
+      setMisses((m) => m + 1);
+      adjustBalance(-MOLE_PENALTY_PER_MISS);
+      setMessage(`핑크 소시지! ${MOLE_PENALTY_PER_MISS.toLocaleString()}원을 잃었어요`);
+      setAloeFace("smug");
+    }
     setHoles((prev) => {
       const next = [...prev];
-      next[idx] = false;
+      next[idx] = null;
       return next;
     });
   }
 
   return (
     <div>
-      <h3 style={styles.gameTitle}>🟤 배민지 잡기</h3>
+      <h3 style={styles.gameTitle}>🐷 배민지 잡기</h3>
       <p style={styles.gameDesc}>
         참가비 {MOLE_ENTRY_COST.toLocaleString()}원. {MOLE_GAME_SECONDS}초
-        동안 튀어나오는 배민지를 빠르게 클릭하세요. 1번 잡을 때마다{" "}
-        {MOLE_REWARD_PER_HIT.toLocaleString()}원!
+        동안 튀어나오는 배민지(돼지)만 클릭하세요. 1번 잡을 때마다{" "}
+        {MOLE_REWARD_PER_HIT.toLocaleString()}원! 핑크 소시지를 잡으면{" "}
+        {MOLE_PENALTY_PER_MISS.toLocaleString()}원을 잃어요.
       </p>
 
       <div style={styles.moleStatusRow}>
-        <span style={styles.moleStat}>점수: {score}</span>
+        <span style={styles.moleStat}>배민지: {score}</span>
+        <span style={styles.moleStat}>소시지: {misses}</span>
         <span style={styles.moleStat}>
           남은 시간: {phase === "playing" ? timeLeft : MOLE_GAME_SECONDS}초
         </span>
       </div>
 
       <div style={styles.moleGrid}>
-        {holes.map((up, idx) => (
+        {holes.map((item, idx) => (
           <button
             key={idx}
             style={styles.moleHole}
             onClick={() => whack(idx)}
             disabled={phase !== "playing"}
-            aria-label={up ? "배민지 잡기" : "빈 구멍"}
+            aria-label={
+              item === "pig"
+                ? "배민지 잡기"
+                : item === "sausage"
+                ? "핑크 소시지 (조심!)"
+                : "빈 구멍"
+            }
           >
-            {up && <BaeMinji size={36} />}
+            {item === "pig" && <BaeMinji size={36} />}
+            {item === "sausage" && <PinkSausage size={36} />}
           </button>
         ))}
       </div>

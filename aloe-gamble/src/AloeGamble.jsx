@@ -102,6 +102,7 @@ export default function AloeGamble() {
           { id: "rps", label: "가위바위보" },
           { id: "mole", label: "배민지 잡기" },
           { id: "lateness", label: "김민서 지각탈출" },
+          { id: "outfit", label: "반재영 옷입히기" },
         ].map((t) => (
           <button
             key={t.id}
@@ -153,7 +154,20 @@ export default function AloeGamble() {
           />
         )}
         {tab === "lateness" && (
-          <LatenessGame setMessage={setMessage} setAloeFace={setAloeFace} />
+          <LatenessGame
+            balance={balance}
+            adjustBalance={adjustBalance}
+            setMessage={setMessage}
+            setAloeFace={setAloeFace}
+          />
+        )}
+        {tab === "outfit" && (
+          <OutfitGame
+            balance={balance}
+            adjustBalance={adjustBalance}
+            setMessage={setMessage}
+            setAloeFace={setAloeFace}
+          />
         )}
       </main>
     </div>
@@ -189,8 +203,14 @@ function HomeScreen({ onNavigate, balance }) {
     {
       id: "lateness",
       title: "김민서 지각탈출",
-      desc: "60초 안에 약속 장소까지! 장애물을 피해 무사히 도착하자.",
+      desc: "참가비 1,000원! 60초 안에 도착하면 코인 획득, 장애물에 부딪히면 코인 손실.",
       icon: "🏃‍♀️",
+    },
+    {
+      id: "outfit",
+      title: "반재영 옷입히기",
+      desc: "공주/거지/갸루 스타일을 믹스매치! 어떤 조합이든 코디비는 빠져나가요.",
+      icon: "👗",
     },
   ];
 
@@ -339,24 +359,56 @@ function DiceFace({ value, label }) {
   );
 }
 
+const SCRATCH_TICKETS = {
+  lucky: {
+    id: "lucky",
+    label: "🍀 행운복권",
+    cost: 500,
+    chance: 0.45,
+    min: 600,
+    max: 1200,
+    desc: "당첨 확률 45% · 600~1,200원",
+  },
+  normal: {
+    id: "normal",
+    label: "🎫 일반복권",
+    cost: 1000,
+    chance: 0.3,
+    min: 2000,
+    max: 5000,
+    desc: "당첨 확률 30% · 2,000~5,000원",
+  },
+  premium: {
+    id: "premium",
+    label: "💎 프리미엄복권",
+    cost: 3000,
+    chance: 0.12,
+    min: 15000,
+    max: 30000,
+    desc: "당첨 확률 12% · 15,000~30,000원",
+  },
+};
+
 function ScratchGame({ balance, adjustBalance, setMessage, setAloeFace }) {
-  const TICKET_COST = 1000;
+  const [ticketType, setTicketType] = useState("normal");
   const [revealing, setRevealing] = useState(false);
   const [lastResult, setLastResult] = useState(null);
 
+  const ticket = SCRATCH_TICKETS[ticketType];
+
   function buyTicket() {
-    if (balance < TICKET_COST) return;
+    if (balance < ticket.cost) return;
     setRevealing(true);
     setLastResult(null);
-    adjustBalance(-TICKET_COST);
+    adjustBalance(-ticket.cost);
     setMessage("복권을 긁는 중...");
     setAloeFace("idle");
 
     setTimeout(() => {
-      const win = Math.random() < 0.3;
+      const win = Math.random() < ticket.chance;
       if (win) {
-        const prize = Math.floor(Math.random() * 4 + 1) * 1000; // 1000~4000 step
-        const reward = 2000 + Math.floor(Math.random() * 3001); // 2000~5000
+        const reward =
+          ticket.min + Math.floor(Math.random() * (ticket.max - ticket.min + 1));
         adjustBalance(reward);
         setLastResult({ win: true, reward });
         setMessage(`당첨! ${reward.toLocaleString()}원을 획득했어요!`);
@@ -374,9 +426,32 @@ function ScratchGame({ balance, adjustBalance, setMessage, setAloeFace }) {
     <div>
       <h3 style={styles.gameTitle}>🎫 즉석복권</h3>
       <p style={styles.gameDesc}>
-        1장당 {TICKET_COST.toLocaleString()}원. 당첨 확률 30%, 당첨 시
-        2,000원~5,000원을 랜덤으로 받아요.
+        원하는 복권 종류를 골라보세요. 가격이 높을수록 당첨 확률은 낮지만
+        상금은 커져요.
       </p>
+
+      <div style={styles.ticketTypeRow}>
+        {Object.values(SCRATCH_TICKETS).map((t) => (
+          <button
+            key={t.id}
+            style={{
+              ...styles.ticketTypeButton,
+              ...(ticketType === t.id ? styles.ticketTypeButtonActive : {}),
+            }}
+            disabled={revealing}
+            onClick={() => {
+              setTicketType(t.id);
+              setLastResult(null);
+            }}
+          >
+            <span style={styles.ticketTypeLabel}>{t.label}</span>
+            <span style={styles.ticketTypeCost}>
+              {t.cost.toLocaleString()}원
+            </span>
+            <span style={styles.ticketTypeDesc}>{t.desc}</span>
+          </button>
+        ))}
+      </div>
 
       <div style={styles.scratchCard}>
         {revealing ? (
@@ -404,14 +479,14 @@ function ScratchGame({ balance, adjustBalance, setMessage, setAloeFace }) {
           width: "100%",
           marginTop: "1rem",
         }}
-        disabled={revealing || balance < TICKET_COST}
+        disabled={revealing || balance < ticket.cost}
         onClick={buyTicket}
       >
         {revealing
           ? "긁는 중..."
-          : `복권 구매 (${TICKET_COST.toLocaleString()}원)`}
+          : `${ticket.label} 구매 (${ticket.cost.toLocaleString()}원)`}
       </button>
-      {balance < TICKET_COST && (
+      {balance < ticket.cost && (
         <p style={styles.notice}>게임머니가 부족해요!</p>
       )}
     </div>
@@ -561,7 +636,7 @@ function PinkSausage({ size = 40 }) {
       height={size}
       viewBox="0 0 64 64"
       role="img"
-      aria-label="핑크 소시지"
+      aria-label="소시지"
     >
       <rect
         x="10"
@@ -569,7 +644,7 @@ function PinkSausage({ size = 40 }) {
         width="44"
         height="16"
         rx="8"
-        fill="#ed93b1"
+        fill="#f0997b"
         transform="rotate(-15 32 32)"
       />
       <rect
@@ -578,11 +653,11 @@ function PinkSausage({ size = 40 }) {
         width="44"
         height="6"
         rx="3"
-        fill="#f4c0d1"
+        fill="#f5c4b3"
         transform="rotate(-15 32 32)"
       />
-      <circle cx="16" cy="36" r="4" fill="#d4537e" />
-      <circle cx="48" cy="20" r="4" fill="#d4537e" />
+      <circle cx="16" cy="36" r="4" fill="#d85a30" />
+      <circle cx="48" cy="20" r="4" fill="#d85a30" />
     </svg>
   );
 }
@@ -687,9 +762,9 @@ function MoleGame({ balance, adjustBalance, setMessage, setAloeFace }) {
       <h3 style={styles.gameTitle}>🐷 배민지 잡기</h3>
       <p style={styles.gameDesc}>
         참가비 {MOLE_ENTRY_COST.toLocaleString()}원. {MOLE_GAME_SECONDS}초
-        동안 튀어나오는 배민지(돼지)만 클릭하세요. 1번 잡을 때마다{" "}
-        {MOLE_REWARD_PER_HIT.toLocaleString()}원! 핑크 소시지를 잡으면{" "}
-        {MOLE_PENALTY_PER_MISS.toLocaleString()}원을 잃어요.
+        동안 튀어나오는 배민지(돼지)만 클릭하세요. 색이 똑같은 소시지에 속지
+        마세요! 1번 잡을 때마다 {MOLE_REWARD_PER_HIT.toLocaleString()}원!
+        소시지를 잡으면 {MOLE_PENALTY_PER_MISS.toLocaleString()}원을 잃어요.
       </p>
 
       <div style={styles.moleStatusRow}>
@@ -711,12 +786,12 @@ function MoleGame({ balance, adjustBalance, setMessage, setAloeFace }) {
               item === "pig"
                 ? "배민지 잡기"
                 : item === "sausage"
-                ? "핑크 소시지 (조심!)"
+                ? "소시지 (조심!)"
                 : "빈 구멍"
             }
           >
-            {item === "pig" && <BaeMinji size={36} />}
-            {item === "sausage" && <PinkSausage size={36} />}
+            {item === "pig" && <BaeMinji size={52} />}
+            {item === "sausage" && <PinkSausage size={52} />}
           </button>
         ))}
       </div>
@@ -760,13 +835,16 @@ const LATE_JUMP_V = -560;
 const LATE_BASE_SPEED = 180;
 const LATE_DISTANCE_GOAL = 9000;
 const LATE_DURATION = 60;
+const LATE_ENTRY_FEE = 1000;
+const LATE_SUCCESS_REWARD = 2500;
+const LATE_AVOID_BONUS = 50;
 
 const LATE_OBSTACLES = {
-  bed: { w: 30, h: 24, emoji: "🛏️", bg: "#cfe8ff", gauge: 25, effect: "freeze" },
-  phone: { w: 20, h: 20, emoji: "📱", bg: "#e3d6ff", gauge: 15, effect: "time", value: 5 },
-  food: { w: 26, h: 22, emoji: "🍔", bg: "#fff1c2", gauge: 10, effect: "slow" },
-  game: { w: 24, h: 22, emoji: "🎮", bg: "#d6f5dd", gauge: 20, effect: "time", value: 7 },
-  bus: { w: 46, h: 34, emoji: "🚌", bg: "#ffe0c2", gauge: 30, effect: "time", value: 10 },
+  bed: { w: 30, h: 24, emoji: "🛏️", bg: "#cfe8ff", gauge: 25, effect: "freeze", coin: -100 },
+  phone: { w: 20, h: 20, emoji: "📱", bg: "#e3d6ff", gauge: 15, effect: "time", value: 5, coin: -150 },
+  food: { w: 26, h: 22, emoji: "🍔", bg: "#fff1c2", gauge: 10, effect: "slow", coin: -100 },
+  game: { w: 24, h: 22, emoji: "🎮", bg: "#d6f5dd", gauge: 20, effect: "time", value: 7, coin: -200 },
+  bus: { w: 46, h: 34, emoji: "🚌", bg: "#ffe0c2", gauge: 30, effect: "time", value: 10, coin: -300 },
 };
 
 const LATE_OBSTACLE_WEIGHTS = [
@@ -795,6 +873,7 @@ function createLateState() {
     timeLeft: LATE_DURATION,
     gauge: 0,
     avoidCount: 0,
+    coinDelta: 0,
     freezeTimer: 0,
     slowTimer: 0,
     spawnTimer: 700,
@@ -803,17 +882,10 @@ function createLateState() {
   };
 }
 
-function computeLateScore(st) {
-  return (
-    Math.floor(st.distance / 10) +
-    Math.floor(st.timeLeft) * 5 +
-    st.avoidCount * 30
-  );
-}
-
 function applyLateObstacleEffect(st, type) {
   const def = LATE_OBSTACLES[type];
   st.gauge = Math.min(100, st.gauge + def.gauge);
+  st.coinDelta += def.coin;
   if (def.effect === "freeze") {
     st.freezeTimer = 3000;
   } else if (def.effect === "time") {
@@ -1014,7 +1086,7 @@ function drawLateGame(canvas, st, paused) {
   }
 }
 
-function LatenessGame({ setMessage, setAloeFace }) {
+function LatenessGame({ balance, adjustBalance, setMessage, setAloeFace }) {
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
   const stateRef = useRef(null);
@@ -1022,34 +1094,63 @@ function LatenessGame({ setMessage, setAloeFace }) {
   const [paused, setPaused] = useState(false);
   const [display, setDisplay] = useState({
     timeLeft: LATE_DURATION,
-    score: 0,
+    coins: balance,
     gauge: 0,
   });
-  const [resultScore, setResultScore] = useState(0);
+  const [resultInfo, setResultInfo] = useState({ net: 0 });
 
   function startGame() {
+    if (balance < LATE_ENTRY_FEE) return;
+    adjustBalance(-LATE_ENTRY_FEE);
     stateRef.current = createLateState();
-    setDisplay({ timeLeft: LATE_DURATION, score: 0, gauge: 0 });
+    setDisplay({
+      timeLeft: LATE_DURATION,
+      coins: balance - LATE_ENTRY_FEE,
+      gauge: 0,
+    });
     setPaused(false);
     setPhase("playing");
-    setMessage("민서야 빨리 가야 해! 점프로 장애물을 피해봐!");
+    setMessage(
+      `참가비 ${LATE_ENTRY_FEE.toLocaleString()}원! 민서야 빨리 가야 해, 장애물을 피해봐!`
+    );
     setAloeFace("idle");
   }
 
   function finishLateGame(result, st) {
-    const score = computeLateScore(st);
-    setResultScore(score);
+    let net;
+    if (result === "success") {
+      net = LATE_SUCCESS_REWARD + st.avoidCount * LATE_AVOID_BONUS + st.coinDelta;
+    } else {
+      net = st.coinDelta;
+    }
+    if (net !== 0) adjustBalance(net);
+
+    setResultInfo({ net });
     setDisplay({
       timeLeft: Math.max(0, Math.ceil(st.timeLeft)),
-      score,
+      coins: balance + net,
       gauge: Math.round(st.gauge),
     });
     setPhase(result);
+
     if (result === "success") {
-      setMessage(`민서가 약속 시간에 도착했어요! (점수 ${score})`);
-      setAloeFace("happy");
+      if (net >= 0) {
+        setMessage(
+          `민서가 약속 시간에 도착! +${net.toLocaleString()}원 획득!`
+        );
+        setAloeFace("happy");
+      } else {
+        setMessage(
+          `도착은 했지만 사고를 너무 많이 쳐서 ${Math.abs(net).toLocaleString()}원 손해예요`
+        );
+        setAloeFace("smug");
+      }
     } else {
-      setMessage(`또 늦었어요... 다음엔 더 잘할 수 있을 거예요`);
+      const lossText =
+        net < 0
+          ? `추가로 ${Math.abs(net).toLocaleString()}원을 더 잃었어요`
+          : `참가비만 날렸어요`;
+      setMessage(`또 늦었어요... ${lossText}`);
       setAloeFace("smug");
     }
   }
@@ -1074,7 +1175,7 @@ function LatenessGame({ setMessage, setAloeFace }) {
       if (st.frame % 3 === 0) {
         setDisplay({
           timeLeft: Math.max(0, Math.ceil(st.timeLeft)),
-          score: computeLateScore(st),
+          coins: balance + st.coinDelta,
           gauge: Math.round(st.gauge),
         });
       }
@@ -1125,26 +1226,41 @@ function LatenessGame({ setMessage, setAloeFace }) {
     <div>
       <h3 style={styles.gameTitle}>🏃‍♀️ 김민서 지각탈출</h3>
       <p style={styles.gameDesc}>
-        약속에 매번 늦는 김민서! 60초 안에 점프로 장애물을 피해 약속 장소까지
-        도착시켜주세요.
+        약속에 매번 늦는 김민서! 참가비{" "}
+        {LATE_ENTRY_FEE.toLocaleString()}원, 60초 안에 점프로 장애물을 피해
+        약속 장소까지 도착시켜주세요. 장애물에 부딪힐 때마다 코인도 함께
+        잃어요.
       </p>
 
       {phase === "ready" && (
         <div style={styles.lateStartBox}>
           <p style={styles.lateStartEmoji}>🏃‍♀️💨</p>
           <p style={styles.lateStartText}>
-            🛏️ 침대: 3초 멈춤 · 📱 폰: -5초
+            🛏️ 침대: 3초 멈춤 & -100원 · 📱 폰: -5초 & -150원
             <br />
-            🍔 배달음식: 속도 감소 · 🎮 게임기: -7초
+            🍔 배달음식: 속도 감소 & -100원 · 🎮 게임기: -7초 & -200원
             <br />
-            🚌 버스: 타이밍 놓치면 -10초
+            🚌 버스: 타이밍 놓치면 -10초 & -300원
+            <br />
+            성공 시 {LATE_SUCCESS_REWARD.toLocaleString()}원 + 회피 보너스
+            지급!
           </p>
           <button
-            style={{ ...styles.button, ...styles.primaryButton, width: "100%" }}
+            style={{
+              ...styles.button,
+              ...(balance >= LATE_ENTRY_FEE
+                ? styles.primaryButton
+                : styles.disabledButton),
+              width: "100%",
+            }}
+            disabled={balance < LATE_ENTRY_FEE}
             onClick={startGame}
           >
-            시작하기
+            시작하기 (참가비 {LATE_ENTRY_FEE.toLocaleString()}원)
           </button>
+          {balance < LATE_ENTRY_FEE && (
+            <p style={styles.notice}>게임머니가 부족해요!</p>
+          )}
         </div>
       )}
 
@@ -1164,8 +1280,10 @@ function LatenessGame({ setMessage, setAloeFace }) {
               </div>
             </div>
             <div style={styles.lateStat}>
-              <span style={styles.lateStatLabel}>점수</span>
-              <span style={styles.lateStatValue}>{display.score}</span>
+              <span style={styles.lateStatLabel}>코인</span>
+              <span style={styles.lateStatValue}>
+                {display.coins.toLocaleString()}
+              </span>
             </div>
           </div>
 
@@ -1184,13 +1302,21 @@ function LatenessGame({ setMessage, setAloeFace }) {
                     : "또 늦었다... 😭"}
                 </p>
                 <p style={styles.lateOverlayScore}>
-                  최종 점수: {resultScore}
+                  {resultInfo.net >= 0
+                    ? `+${resultInfo.net.toLocaleString()}원`
+                    : `${resultInfo.net.toLocaleString()}원`}
                 </p>
                 <button
-                  style={{ ...styles.button, ...styles.primaryButton }}
+                  style={{
+                    ...styles.button,
+                    ...(balance >= LATE_ENTRY_FEE
+                      ? styles.primaryButton
+                      : styles.disabledButton),
+                  }}
+                  disabled={balance < LATE_ENTRY_FEE}
                   onClick={startGame}
                 >
-                  다시 도전
+                  다시 도전 ({LATE_ENTRY_FEE.toLocaleString()}원)
                 </button>
               </div>
             )}
@@ -1217,6 +1343,287 @@ function LatenessGame({ setMessage, setAloeFace }) {
             </button>
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+/* ===================== 반재영 옷입히기 ===================== */
+
+const OUTFIT_STYLING_COST = 800;
+
+const OUTFIT_HAIR_OPTIONS = [
+  { id: "princess", label: "공주 웨이브", emoji: "👑" },
+  { id: "beggar", label: "덥수룩 단발", emoji: "🌀" },
+  { id: "gyaru", label: "갸루 트윈테일", emoji: "🎀" },
+];
+
+const OUTFIT_TOP_OPTIONS = [
+  { id: "princess", label: "코르셋 드레스", emoji: "👗" },
+  { id: "beggar", label: "헌 티셔츠", emoji: "👕" },
+  { id: "gyaru", label: "크롭탑", emoji: "🩱" },
+];
+
+const OUTFIT_BOTTOM_OPTIONS = [
+  { id: "princess", label: "볼륨 스커트", emoji: "🌷" },
+  { id: "beggar", label: "누더기 바지", emoji: "🩳" },
+  { id: "gyaru", label: "체크 미니스커트", emoji: "🏁" },
+];
+
+const OUTFIT_SHOES_OPTIONS = [
+  { id: "princess", label: "유리구두", emoji: "👠" },
+  { id: "beggar", label: "짝짝이 슬리퍼", emoji: "🩴" },
+  { id: "gyaru", label: "통굽 부츠", emoji: "👢" },
+];
+
+const OUTFIT_SET_LABELS = {
+  princess: "공주",
+  beggar: "거지",
+  gyaru: "갸루",
+};
+
+function OutfitCharacter({ hair, top, bottom, shoes, size = 160 }) {
+  return (
+    <svg
+      width={size}
+      height={(size * 170) / 120}
+      viewBox="0 0 120 170"
+      role="img"
+      aria-label="반재영 코디 미리보기"
+    >
+      {/* 기본 몸 (피부) */}
+      <rect x="46" y="96" width="12" height="50" rx="4" fill="#ffe0c2" />
+      <rect x="62" y="96" width="12" height="50" rx="4" fill="#ffe0c2" />
+      <rect x="30" y="62" width="10" height="34" rx="5" fill="#ffe0c2" />
+      <rect x="80" y="62" width="10" height="34" rx="5" fill="#ffe0c2" />
+      <rect x="42" y="58" width="36" height="40" rx="10" fill="#ffe0c2" />
+      <rect x="50" y="46" width="20" height="12" fill="#ffe0c2" />
+      <circle cx="60" cy="32" r="20" fill="#ffe0c2" />
+
+      {/* 얼굴 */}
+      <circle cx="54" cy="30" r="1.6" fill="#3a2c20" />
+      <circle cx="66" cy="30" r="1.6" fill="#3a2c20" />
+      <path d="M54 38 Q60 42 66 38" stroke="#3a2c20" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+
+      {/* 머리 스타일 */}
+      {hair === "princess" && (
+        <>
+          <path d="M38 20 C30 38 32 64 43 70 L47 54 C43 40 47 25 60 18 Z" fill="#f4d35e" />
+          <path d="M82 20 C90 38 88 64 77 70 L73 54 C77 40 73 25 60 18 Z" fill="#f4d35e" />
+          <path d="M40 13 L80 13 L70 5 L60 11 L50 5 Z" fill="#ffd86b" />
+          <circle cx="60" cy="8" r="2" fill="#fff6c4" />
+        </>
+      )}
+      {hair === "beggar" && (
+        <path
+          d="M38 16 Q33 7 44 5 Q50 0 60 5 Q70 0 76 5 Q87 7 82 16 Q88 25 78 21 Q70 28 60 21 Q50 28 42 21 Q32 25 38 16 Z"
+          fill="#6b4f3a"
+        />
+      )}
+      {hair === "gyaru" && (
+        <>
+          <ellipse cx="33" cy="40" rx="7" ry="18" fill="#c97b4a" />
+          <ellipse cx="87" cy="40" rx="7" ry="18" fill="#c97b4a" />
+          <path d="M40 13 Q60 3 80 13 Q78 22 60 18 Q42 22 40 13 Z" fill="#c97b4a" />
+        </>
+      )}
+
+      {/* 상의 */}
+      {top === "princess" && (
+        <>
+          <path d="M40 58 Q60 50 80 58 L80 100 Q60 108 40 100 Z" fill="#b48ce0" />
+          <line x1="40" y1="64" x2="80" y2="64" stroke="#ffd86b" strokeWidth="3" />
+        </>
+      )}
+      {top === "beggar" && (
+        <>
+          <rect x="40" y="58" width="40" height="40" rx="6" fill="#9c8060" />
+          <rect x="44" y="70" width="10" height="10" fill="#7a6248" />
+          <rect x="66" y="80" width="10" height="8" fill="#b89c7a" />
+        </>
+      )}
+      {top === "gyaru" && (
+        <>
+          <rect x="42" y="58" width="36" height="26" rx="6" fill="#ff7eb6" />
+          <rect x="42" y="58" width="36" height="6" rx="3" fill="#2c2c2a" />
+        </>
+      )}
+
+      {/* 하의 */}
+      {bottom === "princess" && (
+        <>
+          <path d="M38 92 Q60 86 82 92 L94 148 L26 148 Z" fill="#caa6f0" />
+          <path d="M38 92 Q60 86 82 92" stroke="#fff" strokeWidth="2" fill="none" />
+        </>
+      )}
+      {bottom === "beggar" && (
+        <>
+          <rect x="44" y="94" width="14" height="52" rx="3" fill="#7a6248" />
+          <rect x="62" y="94" width="14" height="52" rx="3" fill="#8a7058" />
+          <rect x="44" y="120" width="14" height="8" fill="#5a4632" />
+        </>
+      )}
+      {bottom === "gyaru" && (
+        <>
+          <rect x="40" y="92" width="40" height="24" rx="4" fill="#2c2c2a" />
+          <line x1="40" y1="100" x2="80" y2="100" stroke="#fff" strokeWidth="1.5" />
+          <line x1="40" y1="108" x2="80" y2="108" stroke="#fff" strokeWidth="1.5" />
+        </>
+      )}
+
+      {/* 신발 */}
+      {shoes === "princess" && (
+        <>
+          <ellipse cx="51" cy="150" rx="9" ry="5" fill="#cdeeff" />
+          <ellipse cx="69" cy="150" rx="9" ry="5" fill="#cdeeff" />
+          <circle cx="51" cy="148" r="1.5" fill="#fff" />
+          <circle cx="69" cy="148" r="1.5" fill="#fff" />
+        </>
+      )}
+      {shoes === "beggar" && (
+        <>
+          <rect x="42" y="146" width="18" height="6" rx="2" fill="#ff7eb6" />
+          <rect x="60" y="146" width="18" height="6" rx="2" fill="#9adba8" />
+        </>
+      )}
+      {shoes === "gyaru" && (
+        <>
+          <rect x="42" y="128" width="18" height="22" rx="3" fill="#2c2c2a" />
+          <rect x="60" y="128" width="18" height="22" rx="3" fill="#2c2c2a" />
+          <rect x="42" y="142" width="18" height="8" fill="#1a1a1a" />
+          <rect x="60" y="142" width="18" height="8" fill="#1a1a1a" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function OutfitOptionRow({ title, options, selected, onSelect }) {
+  return (
+    <div style={styles.outfitRow}>
+      <p style={styles.outfitRowTitle}>{title}</p>
+      <div style={styles.outfitOptionGrid}>
+        {options.map((o) => (
+          <button
+            key={o.id}
+            style={{
+              ...styles.outfitOptionButton,
+              ...(selected === o.id ? styles.outfitOptionButtonActive : {}),
+            }}
+            onClick={() => onSelect(o.id)}
+          >
+            <span style={styles.outfitOptionEmoji}>{o.emoji}</span>
+            <span style={styles.outfitOptionLabel}>{o.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
+  const [hair, setHair] = useState(OUTFIT_HAIR_OPTIONS[0].id);
+  const [top, setTop] = useState(OUTFIT_TOP_OPTIONS[0].id);
+  const [bottom, setBottom] = useState(OUTFIT_BOTTOM_OPTIONS[0].id);
+  const [shoes, setShoes] = useState(OUTFIT_SHOES_OPTIONS[0].id);
+  const [result, setResult] = useState(null);
+
+  function finishStyling() {
+    if (balance < OUTFIT_STYLING_COST) return;
+    adjustBalance(-OUTFIT_STYLING_COST);
+
+    const counts = { princess: 0, beggar: 0, gyaru: 0 };
+    [hair, top, bottom, shoes].forEach((v) => {
+      counts[v] += 1;
+    });
+    const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+
+    let comment;
+    if (dominant[1] === 4) {
+      if (dominant[0] === "princess") {
+        comment = "완벽한 공주님 반재영 등장! 그래도 코디비는 받을게요";
+      } else if (dominant[0] === "beggar") {
+        comment = "리얼 거지 컨셉 완성... 스타일링비조차 아까운 비주얼이네요";
+      } else {
+        comment = "찐 갸루 반재영 탄생! 스타일 비용은 별도예요";
+      }
+    } else if (dominant[1] >= 3) {
+      comment = `${OUTFIT_SET_LABELS[dominant[0]]} 느낌이 강한 코디네요! 코디비는 동일하게 빠져나가요`;
+    } else {
+      comment = "공주·거지·갸루가 섞인 독특한 믹스매치 코디예요";
+    }
+
+    setResult({
+      cost: OUTFIT_STYLING_COST,
+      comment,
+    });
+    setMessage(`${comment} (-${OUTFIT_STYLING_COST.toLocaleString()}원)`);
+    setAloeFace("smug");
+  }
+
+  return (
+    <div>
+      <h3 style={styles.gameTitle}>👗 반재영 옷입히기</h3>
+      <p style={styles.gameDesc}>
+        머리·상의·하의·신발을 공주/거지/갸루 스타일끼리 자유롭게 믹스매치해서
+        반재영을 코디해보세요. 어떤 조합이든 코디비{" "}
+        {OUTFIT_STYLING_COST.toLocaleString()}원은 빠져나가요.
+      </p>
+
+      <div style={styles.outfitPreviewWrap}>
+        <OutfitCharacter hair={hair} top={top} bottom={bottom} shoes={shoes} />
+      </div>
+
+      <OutfitOptionRow
+        title="머리 스타일"
+        options={OUTFIT_HAIR_OPTIONS}
+        selected={hair}
+        onSelect={setHair}
+      />
+      <OutfitOptionRow
+        title="상의"
+        options={OUTFIT_TOP_OPTIONS}
+        selected={top}
+        onSelect={setTop}
+      />
+      <OutfitOptionRow
+        title="하의"
+        options={OUTFIT_BOTTOM_OPTIONS}
+        selected={bottom}
+        onSelect={setBottom}
+      />
+      <OutfitOptionRow
+        title="신발"
+        options={OUTFIT_SHOES_OPTIONS}
+        selected={shoes}
+        onSelect={setShoes}
+      />
+
+      {result && (
+        <div style={styles.outfitResultBox}>
+          <p style={styles.outfitResultComment}>{result.comment}</p>
+          <p style={styles.outfitResultCost}>
+            -{result.cost.toLocaleString()}원
+          </p>
+        </div>
+      )}
+
+      <button
+        style={{
+          ...styles.button,
+          ...(balance >= OUTFIT_STYLING_COST
+            ? styles.primaryButton
+            : styles.disabledButton),
+          width: "100%",
+          marginTop: "1rem",
+        }}
+        disabled={balance < OUTFIT_STYLING_COST}
+        onClick={finishStyling}
+      >
+        코디 완성하기 (-{OUTFIT_STYLING_COST.toLocaleString()}원)
+      </button>
+      {balance < OUTFIT_STYLING_COST && (
+        <p style={styles.notice}>게임머니가 부족해요!</p>
       )}
     </div>
   );
@@ -1577,5 +1984,102 @@ const styles = {
     flex: 2,
     fontSize: 16,
     padding: "14px 16px",
+  },
+  ticketTypeRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 8,
+    margin: "0.75rem 0",
+  },
+  ticketTypeButton: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 4,
+    padding: "10px 6px",
+    borderRadius: 12,
+    border: "1px solid #d3d1c7",
+    background: "#fff",
+    cursor: "pointer",
+    textAlign: "center",
+  },
+  ticketTypeButtonActive: {
+    borderColor: "#26215c",
+    background: "#f0eefc",
+  },
+  ticketTypeLabel: {
+    fontSize: 13,
+    fontWeight: 700,
+  },
+  ticketTypeCost: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#26215c",
+  },
+  ticketTypeDesc: {
+    fontSize: 10,
+    color: "#5f5e5a",
+    lineHeight: 1.4,
+  },
+  outfitPreviewWrap: {
+    display: "flex",
+    justifyContent: "center",
+    background: "#f4f1ea",
+    borderRadius: 16,
+    padding: "1rem 0",
+    marginBottom: "0.75rem",
+  },
+  outfitRow: {
+    marginBottom: "0.6rem",
+  },
+  outfitRowTitle: {
+    fontSize: 13,
+    fontWeight: 600,
+    margin: "0 0 6px",
+  },
+  outfitOptionGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 8,
+  },
+  outfitOptionButton: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 4,
+    padding: "8px 4px",
+    borderRadius: 12,
+    border: "1px solid #d3d1c7",
+    background: "#fff",
+    cursor: "pointer",
+  },
+  outfitOptionButtonActive: {
+    borderColor: "#26215c",
+    background: "#f0eefc",
+  },
+  outfitOptionEmoji: {
+    fontSize: 20,
+  },
+  outfitOptionLabel: {
+    fontSize: 11,
+    textAlign: "center",
+    lineHeight: 1.3,
+  },
+  outfitResultBox: {
+    marginTop: "0.75rem",
+    background: "#f4f1ea",
+    borderRadius: 12,
+    padding: "0.75rem 1rem",
+    textAlign: "center",
+  },
+  outfitResultComment: {
+    fontSize: 13,
+    margin: "0 0 4px",
+  },
+  outfitResultCost: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#993c1d",
+    margin: 0,
   },
 };

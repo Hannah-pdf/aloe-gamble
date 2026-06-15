@@ -197,13 +197,13 @@ function HomeScreen({ onNavigate, balance }) {
     {
       id: "mole",
       title: "배민지 잡기",
-      desc: "참가비 500원. 15초 동안 배민지를 빠르게 잡아 상금 획득!",
+      desc: "참가비 500원, 15초 동안 배민지를 빠르게 잡아 코인 획득!",
       icon: "🟤",
     },
     {
       id: "lateness",
       title: "김민서 지각탈출",
-      desc: "참가비 1,000원! 60초 안에 도착하면 코인 획득, 장애물에 부딪히면 코인 손실.",
+      desc: "참가비 1,000원! 60초 안에 민서를 도착지까지 이동하라!.",
       icon: "🏃‍♀️",
     },
     {
@@ -1615,7 +1615,7 @@ function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
         disabled={balance < OUTFIT_STYLING_COST}
         onClick={finishStyling}
       >
-        코디 완성하기 (-{OUTFIT_STYLING_COST.toLocaleString()}원)
+        코디 완성하기
       </button>
       {balance < OUTFIT_STYLING_COST && (
         <p style={styles.notice}>게임머니가 부족해요!</p>

@@ -209,7 +209,7 @@ function HomeScreen({ onNavigate, balance }) {
     {
       id: "outfit",
       title: "반재영 옷입히기",
-      desc: "공주/거지/갸루 스타일을 믹스매치! 어떤 조합이든 코디비는 빠져나가요.",
+      desc: "최고의 조합으로 유행을 선도하라! ",
       icon: "👗",
     },
   ];
@@ -709,7 +709,7 @@ function MoleGame({ balance, adjustBalance, setMessage, setAloeFace }) {
     setTimeLeft(MOLE_GAME_SECONDS);
     setHoles(Array(9).fill(null));
     setPhase("playing");
-    setMessage("배민지(돼지)만 잡고, 핑크 소시지는 피하세요!");
+    setMessage("배민지만 잡고, 소시지는 피하세요!");
     setAloeFace("idle");
   }
 
@@ -762,7 +762,7 @@ function MoleGame({ balance, adjustBalance, setMessage, setAloeFace }) {
       <h3 style={styles.gameTitle}>🐷 배민지 잡기</h3>
       <p style={styles.gameDesc}>
         참가비 {MOLE_ENTRY_COST.toLocaleString()}원. {MOLE_GAME_SECONDS}초
-        동안 튀어나오는 배민지(돼지)만 클릭하세요. 색이 똑같은 소시지에 속지
+        동안 튀어나오는 배민지만 클릭하세요. 소시지에 속지
         마세요! 1번 잡을 때마다 {MOLE_REWARD_PER_HIT.toLocaleString()}원!
         소시지를 잡으면 {MOLE_PENALTY_PER_MISS.toLocaleString()}원을 잃어요.
       </p>
@@ -1389,7 +1389,7 @@ function OutfitCharacter({ hair, top, bottom, shoes, size = 160 }) {
       height={(size * 170) / 120}
       viewBox="0 0 120 170"
       role="img"
-      aria-label="반재영 코디 미리보기"
+      aria-label="코디 미리보기"
     >
       {/* 기본 몸 (피부) */}
       <rect x="46" y="96" width="12" height="50" rx="4" fill="#ffe0c2" />
@@ -1541,14 +1541,14 @@ function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
     let comment;
     if (dominant[1] === 4) {
       if (dominant[0] === "princess") {
-        comment = "완벽한 공주님 반재영 등장! 그래도 코디비는 받을게요";
+        comment = "완벽한 공주님 등장! 그래도 코디비는 받을게요";
       } else if (dominant[0] === "beggar") {
         comment = "리얼 거지 컨셉 완성... 스타일링비조차 아까운 비주얼이네요";
       } else {
-        comment = "찐 갸루 반재영 탄생! 스타일 비용은 별도예요";
+        comment = "찐 갸루 탄생! 스타일 비용은 별도예요";
       }
     } else if (dominant[1] >= 3) {
-      comment = `${OUTFIT_SET_LABELS[dominant[0]]} 느낌이 강한 코디네요! 코디비는 동일하게 빠져나가요`;
+      comment = `${OUTFIT_SET_LABELS[dominant[0]]} 느낌이 강한 코디네요!`;
     } else {
       comment = "공주·거지·갸루가 섞인 독특한 믹스매치 코디예요";
     }
@@ -1564,11 +1564,6 @@ function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
   return (
     <div>
       <h3 style={styles.gameTitle}>👗 반재영 옷입히기</h3>
-      <p style={styles.gameDesc}>
-        머리·상의·하의·신발을 공주/거지/갸루 스타일끼리 자유롭게 믹스매치해서
-        반재영을 코디해보세요. 어떤 조합이든 코디비{" "}
-        {OUTFIT_STYLING_COST.toLocaleString()}원은 빠져나가요.
-      </p>
 
       <div style={styles.outfitPreviewWrap}>
         <OutfitCharacter hair={hair} top={top} bottom={bottom} shoes={shoes} />

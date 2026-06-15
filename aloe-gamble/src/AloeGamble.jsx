@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const STORAGE_KEY = "aloe_gamble_save";
 const DAILY_AMOUNT = 10000;
@@ -101,6 +101,7 @@ export default function AloeGamble() {
           { id: "scratch", label: "즉석복권" },
           { id: "rps", label: "가위바위보" },
           { id: "mole", label: "배민지 잡기" },
+          { id: "lateness", label: "김민서 지각탈출" },
         ].map((t) => (
           <button
             key={t.id}
@@ -151,6 +152,9 @@ export default function AloeGamble() {
             setAloeFace={setAloeFace}
           />
         )}
+        {tab === "lateness" && (
+          <LatenessGame setMessage={setMessage} setAloeFace={setAloeFace} />
+        )}
       </main>
     </div>
   );
@@ -181,6 +185,12 @@ function HomeScreen({ onNavigate, balance }) {
       title: "배민지 잡기",
       desc: "참가비 500원. 15초 동안 배민지를 빠르게 잡아 상금 획득!",
       icon: "🟤",
+    },
+    {
+      id: "lateness",
+      title: "김민서 지각탈출",
+      desc: "60초 안에 약속 장소까지! 장애물을 피해 무사히 도착하자.",
+      icon: "🏃‍♀️",
     },
   ];
 
@@ -736,6 +746,482 @@ function MoleGame({ balance, adjustBalance, setMessage, setAloeFace }) {
   );
 }
 
+/* ===================== 김민서 지각탈출 ===================== */
+
+const LATE_CANVAS_W = 320;
+const LATE_CANVAS_H = 160;
+const LATE_GROUND_H = 28;
+const LATE_GROUND_Y = LATE_CANVAS_H - LATE_GROUND_H;
+const LATE_PLAYER_X = 40;
+const LATE_PLAYER_W = 24;
+const LATE_PLAYER_H = 32;
+const LATE_GRAVITY = 1700;
+const LATE_JUMP_V = -560;
+const LATE_BASE_SPEED = 180;
+const LATE_DISTANCE_GOAL = 9000;
+const LATE_DURATION = 60;
+
+const LATE_OBSTACLES = {
+  bed: { w: 30, h: 24, emoji: "🛏️", bg: "#cfe8ff", gauge: 25, effect: "freeze" },
+  phone: { w: 20, h: 20, emoji: "📱", bg: "#e3d6ff", gauge: 15, effect: "time", value: 5 },
+  food: { w: 26, h: 22, emoji: "🍔", bg: "#fff1c2", gauge: 10, effect: "slow" },
+  game: { w: 24, h: 22, emoji: "🎮", bg: "#d6f5dd", gauge: 20, effect: "time", value: 7 },
+  bus: { w: 46, h: 34, emoji: "🚌", bg: "#ffe0c2", gauge: 30, effect: "time", value: 10 },
+};
+
+const LATE_OBSTACLE_WEIGHTS = [
+  ["bed", 22],
+  ["phone", 24],
+  ["food", 22],
+  ["game", 18],
+  ["bus", 14],
+];
+
+function pickObstacleType() {
+  const total = LATE_OBSTACLE_WEIGHTS.reduce((s, [, w]) => s + w, 0);
+  let r = Math.random() * total;
+  for (const [type, w] of LATE_OBSTACLE_WEIGHTS) {
+    if (r < w) return type;
+    r -= w;
+  }
+  return LATE_OBSTACLE_WEIGHTS[0][0];
+}
+
+function createLateState() {
+  return {
+    player: { y: LATE_GROUND_Y - LATE_PLAYER_H, vy: 0 },
+    obstacles: [],
+    distance: 0,
+    timeLeft: LATE_DURATION,
+    gauge: 0,
+    avoidCount: 0,
+    freezeTimer: 0,
+    slowTimer: 0,
+    spawnTimer: 700,
+    frame: 0,
+    lastTime: null,
+  };
+}
+
+function computeLateScore(st) {
+  return (
+    Math.floor(st.distance / 10) +
+    Math.floor(st.timeLeft) * 5 +
+    st.avoidCount * 30
+  );
+}
+
+function applyLateObstacleEffect(st, type) {
+  const def = LATE_OBSTACLES[type];
+  st.gauge = Math.min(100, st.gauge + def.gauge);
+  if (def.effect === "freeze") {
+    st.freezeTimer = 3000;
+  } else if (def.effect === "time") {
+    st.timeLeft = Math.max(0, st.timeLeft - def.value);
+  } else if (def.effect === "slow") {
+    st.slowTimer = 3000;
+  }
+}
+
+function updateLateGame(st, dt) {
+  st.timeLeft = Math.max(0, st.timeLeft - dt);
+  if (st.freezeTimer > 0) st.freezeTimer = Math.max(0, st.freezeTimer - dt * 1000);
+  if (st.slowTimer > 0) st.slowTimer = Math.max(0, st.slowTimer - dt * 1000);
+
+  const speed = st.slowTimer > 0 ? LATE_BASE_SPEED * 0.5 : LATE_BASE_SPEED;
+  st.distance += speed * dt;
+
+  const p = st.player;
+  p.vy += LATE_GRAVITY * dt;
+  p.y += p.vy * dt;
+  const groundTop = LATE_GROUND_Y - LATE_PLAYER_H;
+  if (p.y > groundTop) {
+    p.y = groundTop;
+    p.vy = 0;
+  }
+
+  st.spawnTimer -= dt * 1000;
+  if (st.spawnTimer <= 0) {
+    const type = pickObstacleType();
+    const def = LATE_OBSTACLES[type];
+    st.obstacles.push({
+      type,
+      x: LATE_CANVAS_W + 10,
+      w: def.w,
+      h: def.h,
+      hit: false,
+      counted: false,
+    });
+    st.spawnTimer = 850 + Math.random() * 750;
+  }
+
+  const px = LATE_PLAYER_X;
+  const pw = LATE_PLAYER_W;
+  const ph = LATE_PLAYER_H;
+  const py = p.y;
+  const pad = 4;
+
+  for (const ob of st.obstacles) {
+    ob.x -= speed * dt;
+    const oy = LATE_GROUND_Y - ob.h;
+    if (!ob.hit) {
+      const overlap =
+        px + pad < ob.x + ob.w - pad &&
+        px + pw - pad > ob.x + pad &&
+        py + pad < oy + ob.h - pad &&
+        py + ph - pad > oy + pad;
+      if (overlap) {
+        ob.hit = true;
+        applyLateObstacleEffect(st, ob.type);
+      } else if (!ob.counted && ob.x + ob.w < px) {
+        ob.counted = true;
+        st.avoidCount += 1;
+      }
+    }
+  }
+  st.obstacles = st.obstacles.filter((ob) => ob.x + ob.w > -10);
+
+  st.frame += 1;
+}
+
+function lateRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function lateDrawCloud(ctx, x, y, r) {
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.6, 0, Math.PI * 2);
+  ctx.arc(x + r * 0.6, y + 4, r * 0.5, 0, Math.PI * 2);
+  ctx.arc(x - r * 0.6, y + 4, r * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function lateDrawPlayer(ctx, st) {
+  const p = st.player;
+  const x = LATE_PLAYER_X;
+  const y = p.y;
+  const w = LATE_PLAYER_W;
+  const h = LATE_PLAYER_H;
+  const onGround = p.y >= LATE_GROUND_Y - LATE_PLAYER_H - 0.5;
+  const shake = st.freezeTimer > 0 ? Math.sin(st.frame * 1.5) * 1.5 : 0;
+  const cx = x + w / 2 + shake;
+
+  ctx.strokeStyle = "#5a4632";
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
+  const legSwing = onGround ? Math.sin(st.frame * 0.6) * 6 : 0;
+  ctx.beginPath();
+  ctx.moveTo(cx - 4, y + h - 6);
+  ctx.lineTo(cx - 4 + legSwing, y + h + 6);
+  ctx.moveTo(cx + 4, y + h - 6);
+  ctx.lineTo(cx + 4 - legSwing, y + h + 6);
+  ctx.stroke();
+
+  ctx.fillStyle = "#ff9bb3";
+  lateRoundRect(ctx, x + 2 + shake, y + 10, w - 4, h - 16, 6);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffe0c2";
+  ctx.beginPath();
+  ctx.arc(cx, y + 8, 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#5a4632";
+  ctx.beginPath();
+  ctx.arc(cx, y + 5, 8.5, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#3a2c20";
+  ctx.beginPath();
+  ctx.arc(cx - 3, y + 8, 1, 0, Math.PI * 2);
+  ctx.arc(cx + 3, y + 8, 1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, y + 10, 2.5, 0, Math.PI, false);
+  ctx.stroke();
+
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  if (st.freezeTimer > 0) {
+    ctx.fillText("💤", cx, y - 6);
+  } else if (st.slowTimer > 0) {
+    ctx.fillText("🍔", cx, y - 6);
+  }
+}
+
+function drawLateGame(canvas, st, paused) {
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W = LATE_CANVAS_W;
+  const H = LATE_CANVAS_H;
+
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, "#bfe6ff");
+  grad.addColorStop(1, "#eaf7ff");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  const cloudOffset = st.distance * 0.2;
+  for (let i = 0; i < 3; i++) {
+    const span = W + 200;
+    let cx = i * 160 - (cloudOffset % span);
+    if (cx < -60) cx += span;
+    lateDrawCloud(ctx, cx - 60, 20 + (i % 2) * 14, 22);
+  }
+
+  ctx.fillStyle = "#bff0c8";
+  ctx.fillRect(0, LATE_GROUND_Y, W, LATE_GROUND_H);
+  ctx.strokeStyle = "#9adba8";
+  ctx.lineWidth = 2;
+  const stripeOffset = st.distance % 24;
+  for (let x = -stripeOffset; x < W; x += 24) {
+    ctx.beginPath();
+    ctx.moveTo(x, LATE_GROUND_Y + 4);
+    ctx.lineTo(x - 8, H);
+    ctx.stroke();
+  }
+
+  for (const ob of st.obstacles) {
+    const def = LATE_OBSTACLES[ob.type];
+    const oy = LATE_GROUND_Y - ob.h;
+    ctx.fillStyle = def.bg;
+    lateRoundRect(ctx, ob.x, oy, ob.w, ob.h, 6);
+    ctx.fill();
+    ctx.font = `${Math.floor(ob.h * 0.8)}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(def.emoji, ob.x + ob.w / 2, oy + ob.h / 2 + 1);
+  }
+
+  lateDrawPlayer(ctx, st);
+
+  if (paused) {
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 18px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("일시정지", W / 2, H / 2);
+  }
+}
+
+function LatenessGame({ setMessage, setAloeFace }) {
+  const canvasRef = useRef(null);
+  const rafRef = useRef(null);
+  const stateRef = useRef(null);
+  const [phase, setPhase] = useState("ready"); // ready | playing | success | fail
+  const [paused, setPaused] = useState(false);
+  const [display, setDisplay] = useState({
+    timeLeft: LATE_DURATION,
+    score: 0,
+    gauge: 0,
+  });
+  const [resultScore, setResultScore] = useState(0);
+
+  function startGame() {
+    stateRef.current = createLateState();
+    setDisplay({ timeLeft: LATE_DURATION, score: 0, gauge: 0 });
+    setPaused(false);
+    setPhase("playing");
+    setMessage("민서야 빨리 가야 해! 점프로 장애물을 피해봐!");
+    setAloeFace("idle");
+  }
+
+  function finishLateGame(result, st) {
+    const score = computeLateScore(st);
+    setResultScore(score);
+    setDisplay({
+      timeLeft: Math.max(0, Math.ceil(st.timeLeft)),
+      score,
+      gauge: Math.round(st.gauge),
+    });
+    setPhase(result);
+    if (result === "success") {
+      setMessage(`민서가 약속 시간에 도착했어요! (점수 ${score})`);
+      setAloeFace("happy");
+    } else {
+      setMessage(`또 늦었어요... 다음엔 더 잘할 수 있을 거예요`);
+      setAloeFace("smug");
+    }
+  }
+
+  useEffect(() => {
+    if (phase !== "playing") {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      return;
+    }
+
+    const loop = (now) => {
+      const st = stateRef.current;
+      if (!st.lastTime) st.lastTime = now;
+      const dt = Math.min((now - st.lastTime) / 1000, 0.05);
+      st.lastTime = now;
+
+      if (!paused) {
+        updateLateGame(st, dt);
+      }
+      drawLateGame(canvasRef.current, st, paused);
+
+      if (st.frame % 3 === 0) {
+        setDisplay({
+          timeLeft: Math.max(0, Math.ceil(st.timeLeft)),
+          score: computeLateScore(st),
+          gauge: Math.round(st.gauge),
+        });
+      }
+
+      if (!paused) {
+        if (st.gauge >= 100 || st.timeLeft <= 0) {
+          finishLateGame("fail", st);
+          return;
+        }
+        if (st.distance >= LATE_DISTANCE_GOAL) {
+          finishLateGame("success", st);
+          return;
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(loop);
+    };
+
+    rafRef.current = requestAnimationFrame(loop);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, paused]);
+
+  function handleJump() {
+    const st = stateRef.current;
+    if (!st || phase !== "playing" || paused) return;
+    if (st.freezeTimer > 0) return;
+    const groundTop = LATE_GROUND_Y - LATE_PLAYER_H;
+    if (st.player.y >= groundTop - 0.5) {
+      st.player.vy = LATE_JUMP_V;
+    }
+  }
+
+  function togglePause() {
+    if (phase !== "playing") return;
+    setPaused((prev) => {
+      const next = !prev;
+      if (!next && stateRef.current) {
+        stateRef.current.lastTime = null;
+      }
+      return next;
+    });
+  }
+
+  return (
+    <div>
+      <h3 style={styles.gameTitle}>🏃‍♀️ 김민서 지각탈출</h3>
+      <p style={styles.gameDesc}>
+        약속에 매번 늦는 김민서! 60초 안에 점프로 장애물을 피해 약속 장소까지
+        도착시켜주세요.
+      </p>
+
+      {phase === "ready" && (
+        <div style={styles.lateStartBox}>
+          <p style={styles.lateStartEmoji}>🏃‍♀️💨</p>
+          <p style={styles.lateStartText}>
+            🛏️ 침대: 3초 멈춤 · 📱 폰: -5초
+            <br />
+            🍔 배달음식: 속도 감소 · 🎮 게임기: -7초
+            <br />
+            🚌 버스: 타이밍 놓치면 -10초
+          </p>
+          <button
+            style={{ ...styles.button, ...styles.primaryButton, width: "100%" }}
+            onClick={startGame}
+          >
+            시작하기
+          </button>
+        </div>
+      )}
+
+      {phase !== "ready" && (
+        <>
+          <div style={styles.lateTopBar}>
+            <div style={styles.lateStat}>
+              <span style={styles.lateStatLabel}>남은 시간</span>
+              <span style={styles.lateStatValue}>{display.timeLeft}초</span>
+            </div>
+            <div style={{ ...styles.lateStat, flex: 1.6 }}>
+              <span style={styles.lateStatLabel}>지각 게이지</span>
+              <div style={styles.gaugeTrack}>
+                <div
+                  style={{ ...styles.gaugeFill, width: `${display.gauge}%` }}
+                />
+              </div>
+            </div>
+            <div style={styles.lateStat}>
+              <span style={styles.lateStatLabel}>점수</span>
+              <span style={styles.lateStatValue}>{display.score}</span>
+            </div>
+          </div>
+
+          <div style={styles.lateCanvasWrap}>
+            <canvas
+              ref={canvasRef}
+              width={LATE_CANVAS_W}
+              height={LATE_CANVAS_H}
+              style={styles.lateCanvas}
+            />
+            {(phase === "success" || phase === "fail") && (
+              <div style={styles.lateOverlay}>
+                <p style={styles.lateOverlayTitle}>
+                  {phase === "success"
+                    ? "약속 시간에 도착! 🎉"
+                    : "또 늦었다... 😭"}
+                </p>
+                <p style={styles.lateOverlayScore}>
+                  최종 점수: {resultScore}
+                </p>
+                <button
+                  style={{ ...styles.button, ...styles.primaryButton }}
+                  onClick={startGame}
+                >
+                  다시 도전
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div style={styles.lateControls}>
+            <button
+              style={{
+                ...styles.button,
+                ...styles.primaryButton,
+                ...styles.lateJumpButton,
+              }}
+              onClick={handleJump}
+              disabled={phase !== "playing" || paused}
+            >
+              ⬆️ 점프
+            </button>
+            <button
+              style={{ ...styles.button, ...styles.smallButton }}
+              onClick={togglePause}
+              disabled={phase !== "playing"}
+            >
+              {paused ? "▶️ 계속" : "⏸️ 일시정지"}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 const styles = {
   app: {
     maxWidth: 480,
@@ -995,5 +1481,101 @@ const styles = {
     justifyContent: "center",
     cursor: "pointer",
     padding: 0,
+  },
+  lateStartBox: {
+    background: "#f4f1ea",
+    border: "1px solid #d3d1c7",
+    borderRadius: 16,
+    padding: "1.25rem 1rem",
+    textAlign: "center",
+  },
+  lateStartEmoji: {
+    fontSize: 36,
+    margin: "0 0 8px",
+  },
+  lateStartText: {
+    fontSize: 12,
+    color: "#5f5e5a",
+    lineHeight: 1.8,
+    margin: "0 0 1rem",
+  },
+  lateTopBar: {
+    display: "flex",
+    gap: 8,
+    marginBottom: 8,
+  },
+  lateStat: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    background: "#f4f1ea",
+    borderRadius: 10,
+    padding: "6px 10px",
+  },
+  lateStatLabel: {
+    fontSize: 11,
+    color: "#5f5e5a",
+  },
+  lateStatValue: {
+    fontSize: 15,
+    fontWeight: 700,
+  },
+  gaugeTrack: {
+    width: "100%",
+    height: 8,
+    borderRadius: 4,
+    background: "#e1ddd0",
+    overflow: "hidden",
+  },
+  gaugeFill: {
+    height: "100%",
+    background: "linear-gradient(90deg, #ffb86b, #ff6b6b)",
+    borderRadius: 4,
+    transition: "width 0.1s linear",
+  },
+  lateCanvasWrap: {
+    position: "relative",
+    width: "100%",
+    borderRadius: 12,
+    overflow: "hidden",
+    border: "1px solid #d3d1c7",
+  },
+  lateCanvas: {
+    width: "100%",
+    height: "auto",
+    display: "block",
+  },
+  lateOverlay: {
+    position: "absolute",
+    inset: 0,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    background: "rgba(20, 18, 30, 0.55)",
+    color: "#fff",
+    textAlign: "center",
+    padding: "1rem",
+  },
+  lateOverlayTitle: {
+    fontSize: 18,
+    fontWeight: 700,
+    margin: 0,
+  },
+  lateOverlayScore: {
+    fontSize: 13,
+    margin: 0,
+  },
+  lateControls: {
+    display: "flex",
+    gap: 8,
+    marginTop: 10,
+  },
+  lateJumpButton: {
+    flex: 2,
+    fontSize: 16,
+    padding: "14px 16px",
   },
 };

@@ -96,13 +96,13 @@ export default function AloeGamble() {
 
       <nav style={styles.tabs}>
         {[
-          { id: "home", label: "홈" },
-          { id: "dice", label: "주사위 대결" },
-          { id: "scratch", label: "즉석복권" },
-          { id: "rps", label: "가위바위보" },
-          { id: "mole", label: "배민지 잡기" },
-          { id: "lateness", label: "김민서 지각탈출" },
-          { id: "outfit", label: "반재영 옷입히기" },
+          { id: "home", label: "🏠 홈" },
+          { id: "dice", label: "🎲 주사위" },
+          { id: "scratch", label: "🎫 복권" },
+          { id: "rps", label: "✊ 가위바위보" },
+          { id: "mole", label: "🐷 배민지" },
+          { id: "lateness", label: "🏃‍♀️ 민서" },
+          { id: "outfit", label: "👗 재영" },
         ].map((t) => (
           <button
             key={t.id}
@@ -117,8 +117,7 @@ export default function AloeGamble() {
         ))}
       </nav>
 
-      <main style={styles.main}>
-        {tab === "home" && (
+      <main style={styles.main}>        {tab === "home" && (
           <HomeScreen onNavigate={setTab} balance={balance} />
         )}
         {tab === "dice" && (
@@ -197,19 +196,19 @@ function HomeScreen({ onNavigate, balance }) {
     {
       id: "mole",
       title: "배민지 잡기",
-      desc: "참가비 500원, 15초 동안 배민지를 빠르게 잡아 코인 획득!",
+      desc: "참가비 500원. 15초 동안 배민지를 빠르게 잡아 상금 획득!",
       icon: "🟤",
     },
     {
       id: "lateness",
       title: "김민서 지각탈출",
-      desc: "참가비 1,000원! 60초 안에 민서를 도착지까지 이동하라!.",
+      desc: "참가비 1,000원! 60초 안에 도착하면 코인 획득, 장애물에 부딪히면 코인 손실.",
       icon: "🏃‍♀️",
     },
     {
       id: "outfit",
       title: "반재영 옷입히기",
-      desc: "최고의 조합으로 유행을 선도하라! ",
+      desc: "공주/거지/갸루 스타일을 믹스매치! 어떤 조합이든 코디비는 빠져나가요.",
       icon: "👗",
     },
   ];
@@ -223,17 +222,15 @@ function HomeScreen({ onNavigate, balance }) {
       )}
       <div style={styles.cardGrid}>
         {cards.map((c) => (
-          <div key={c.id} style={styles.card}>
+          <button
+            key={c.id}
+            style={styles.card}
+            onClick={() => onNavigate(c.id)}
+          >
             <div style={styles.cardIcon}>{c.icon}</div>
             <p style={styles.cardTitle}>{c.title}</p>
             <p style={styles.cardDesc}>{c.desc}</p>
-            <button
-              style={{ ...styles.button, ...styles.primaryButton, width: "100%" }}
-              onClick={() => onNavigate(c.id)}
-            >
-              플레이
-            </button>
-          </div>
+          </button>
         ))}
       </div>
     </div>
@@ -709,7 +706,7 @@ function MoleGame({ balance, adjustBalance, setMessage, setAloeFace }) {
     setTimeLeft(MOLE_GAME_SECONDS);
     setHoles(Array(9).fill(null));
     setPhase("playing");
-    setMessage("배민지만 잡고, 소시지는 피하세요!");
+    setMessage("배민지(돼지)만 잡고, 핑크 소시지는 피하세요!");
     setAloeFace("idle");
   }
 
@@ -762,7 +759,7 @@ function MoleGame({ balance, adjustBalance, setMessage, setAloeFace }) {
       <h3 style={styles.gameTitle}>🐷 배민지 잡기</h3>
       <p style={styles.gameDesc}>
         참가비 {MOLE_ENTRY_COST.toLocaleString()}원. {MOLE_GAME_SECONDS}초
-        동안 튀어나오는 배민지만 클릭하세요. 소시지에 속지
+        동안 튀어나오는 배민지(돼지)만 클릭하세요. 색이 똑같은 소시지에 속지
         마세요! 1번 잡을 때마다 {MOLE_REWARD_PER_HIT.toLocaleString()}원!
         소시지를 잡으면 {MOLE_PENALTY_PER_MISS.toLocaleString()}원을 잃어요.
       </p>
@@ -1389,7 +1386,7 @@ function OutfitCharacter({ hair, top, bottom, shoes, size = 160 }) {
       height={(size * 170) / 120}
       viewBox="0 0 120 170"
       role="img"
-      aria-label="코디 미리보기"
+      aria-label="반재영 코디 미리보기"
     >
       {/* 기본 몸 (피부) */}
       <rect x="46" y="96" width="12" height="50" rx="4" fill="#ffe0c2" />
@@ -1541,14 +1538,14 @@ function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
     let comment;
     if (dominant[1] === 4) {
       if (dominant[0] === "princess") {
-        comment = "완벽한 공주님 등장! 그래도 코디비는 받을게요";
+        comment = "완벽한 공주님 반재영 등장! 그래도 코디비는 받을게요";
       } else if (dominant[0] === "beggar") {
         comment = "리얼 거지 컨셉 완성... 스타일링비조차 아까운 비주얼이네요";
       } else {
-        comment = "찐 갸루 탄생! 스타일 비용은 별도예요";
+        comment = "찐 갸루 반재영 탄생! 스타일 비용은 별도예요";
       }
     } else if (dominant[1] >= 3) {
-      comment = `${OUTFIT_SET_LABELS[dominant[0]]} 느낌이 강한 코디네요!`;
+      comment = `${OUTFIT_SET_LABELS[dominant[0]]} 느낌이 강한 코디네요! 코디비는 동일하게 빠져나가요`;
     } else {
       comment = "공주·거지·갸루가 섞인 독특한 믹스매치 코디예요";
     }
@@ -1564,6 +1561,11 @@ function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
   return (
     <div>
       <h3 style={styles.gameTitle}>👗 반재영 옷입히기</h3>
+      <p style={styles.gameDesc}>
+        머리·상의·하의·신발을 공주/거지/갸루 스타일끼리 자유롭게 믹스매치해서
+        반재영을 코디해보세요. 어떤 조합이든 코디비{" "}
+        {OUTFIT_STYLING_COST.toLocaleString()}원은 빠져나가요.
+      </p>
 
       <div style={styles.outfitPreviewWrap}>
         <OutfitCharacter hair={hair} top={top} bottom={bottom} shoes={shoes} />
@@ -1615,7 +1617,7 @@ function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
         disabled={balance < OUTFIT_STYLING_COST}
         onClick={finishStyling}
       >
-        코디 완성하기
+        코디 완성하기 (-{OUTFIT_STYLING_COST.toLocaleString()}원)
       </button>
       {balance < OUTFIT_STYLING_COST && (
         <p style={styles.notice}>게임머니가 부족해요!</p>
@@ -1625,456 +1627,217 @@ function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
 }
 
 const styles = {
+  /* ─── 기반 ─── */
   app: {
-    maxWidth: 480,
-    margin: "0 auto",
-    fontFamily:
-      "'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif",
-    color: "#2c2c2a",
-    padding: "1rem",
+    maxWidth: 430,
+    margin: '0 auto',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Pretendard", "Apple SD Gothic Neo", sans-serif',
+    color: '#1c1c1e',
+    background: '#f2f2f7',
+    minHeight: '100vh',
+    padding: '0 0 2rem',
   },
   header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    background: "#f4f1ea",
-    borderRadius: 16,
-    padding: "1rem 1.25rem",
-    marginBottom: "0.75rem",
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    background: 'rgba(255,255,255,0.82)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderBottom: '0.5px solid rgba(60,60,67,0.12)',
+    padding: '14px 20px',
+    marginBottom: '0',
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
   },
-  aloe: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  },
-  aloeFace: {
-    fontSize: 32,
-  },
-  aloeName: {
-    fontWeight: 600,
-    fontSize: 15,
-    margin: 0,
-  },
-  aloeMsg: {
-    fontSize: 12,
-    color: "#5f5e5a",
-    margin: 0,
-    maxWidth: 180,
-  },
-  balanceBox: {
-    textAlign: "right",
-  },
-  balanceLabel: {
-    fontSize: 12,
-    color: "#5f5e5a",
-    margin: 0,
-  },
-  balanceValue: {
-    fontSize: 20,
-    fontWeight: 700,
-    margin: 0,
-  },
-  claimRow: {
-    marginBottom: "0.75rem",
-  },
+  aloe: { display: 'flex', alignItems: 'center', gap: 10 },
+  aloeFace: { fontSize: 28, lineHeight: 1 },
+  aloeName: { fontWeight: 600, fontSize: 14, margin: 0, color: '#1c1c1e' },
+  aloeMsg: { fontSize: 11, color: '#8e8e93', margin: 0, maxWidth: 160 },
+  balanceBox: { textAlign: 'right' },
+  balanceLabel: { fontSize: 11, color: '#8e8e93', margin: 0 },
+  balanceValue: { fontSize: 19, fontWeight: 700, margin: 0, letterSpacing: '-0.3px' },
+  claimRow: { padding: '12px 16px', background: '#f2f2f7' },
+  /* ─── 탭 ─── */
   tabs: {
-    display: "flex",
-    gap: 6,
-    marginBottom: "1rem",
-    overflowX: "auto",
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: 0,
+    background: 'rgba(255,255,255,0.82)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderBottom: '0.5px solid rgba(60,60,67,0.12)',
+    padding: '4px 8px 6px',
+    marginBottom: '0',
+    position: 'sticky',
+    top: 57,
+    zIndex: 9,
   },
   tabButton: {
-    flex: "1 0 auto",
-    padding: "8px 12px",
-    fontSize: 13,
-    borderRadius: 10,
-    border: "1px solid #d3d1c7",
-    background: "#fff",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
+    padding: '6px 4px',
+    fontSize: 10,
+    fontWeight: 500,
+    borderRadius: 8,
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    color: '#8e8e93',
+    whiteSpace: 'nowrap',
+    textAlign: 'center',
+    letterSpacing: '-0.1px',
   },
   tabButtonActive: {
-    background: "#26215c",
-    color: "#fff",
-    borderColor: "#26215c",
+    background: '#e9e9eb',
+    color: '#007aff',
+    fontWeight: 700,
   },
-  main: {
-    minHeight: 200,
-  },
+  main: { padding: '16px', minHeight: 200 },
+  /* ─── 홈 카드 그리드 ─── */
   cardGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
     gap: 12,
   },
   card: {
-    border: "1px solid #d3d1c7",
+    border: 'none',
     borderRadius: 16,
-    padding: "1rem",
-    textAlign: "center",
-    background: "#fff",
+    padding: '18px 12px 14px',
+    textAlign: 'center',
+    background: '#fff',
+    cursor: 'pointer',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
-  cardIcon: {
-    fontSize: 32,
-  },
-  cardTitle: {
-    fontWeight: 600,
-    fontSize: 15,
-    margin: "6px 0 2px",
-  },
-  cardDesc: {
-    fontSize: 12,
-    color: "#5f5e5a",
-    margin: "0 0 10px",
-  },
+  cardIcon: { fontSize: 30, marginBottom: 6 },
+  cardTitle: { fontWeight: 600, fontSize: 13, margin: '0 0 4px', color: '#1c1c1e' },
+  cardDesc: { fontSize: 11, color: '#8e8e93', margin: 0, lineHeight: 1.5 },
+  /* ─── 버튼 ─── */
   button: {
-    border: "1px solid #d3d1c7",
-    borderRadius: 10,
-    padding: "10px 16px",
-    fontSize: 14,
+    border: 'none',
+    borderRadius: 12,
+    padding: '12px 16px',
+    fontSize: 15,
     fontWeight: 600,
-    cursor: "pointer",
-    background: "#fff",
+    cursor: 'pointer',
+    background: '#e9e9eb',
+    color: '#1c1c1e',
+    WebkitTapHighlightColor: 'transparent',
   },
   primaryButton: {
-    background: "#26215c",
-    color: "#fff",
-    borderColor: "#26215c",
+    background: '#007aff',
+    color: '#fff',
   },
   disabledButton: {
-    background: "#e1ddd0",
-    color: "#888780",
-    borderColor: "#d3d1c7",
-    cursor: "not-allowed",
+    background: '#e9e9eb',
+    color: '#c7c7cc',
+    cursor: 'not-allowed',
   },
   smallButton: {
-    border: "1px solid #d3d1c7",
-    borderRadius: 8,
-    padding: "8px 10px",
-    fontSize: 12,
-    background: "#fff",
-    cursor: "pointer",
-  },
-  betRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    margin: "1rem 0",
-  },
-  betLabel: {
+    border: 'none',
+    borderRadius: 10,
+    padding: '10px 14px',
     fontSize: 13,
-    color: "#5f5e5a",
-    flexShrink: 0,
+    fontWeight: 500,
+    background: '#e9e9eb',
+    cursor: 'pointer',
+    color: '#1c1c1e',
   },
+  /* ─── 배팅 ─── */
+  betRow: { display: 'flex', alignItems: 'center', gap: 8, margin: '1rem 0' },
+  betLabel: { fontSize: 13, color: '#8e8e93', flexShrink: 0 },
   betInput: {
     flex: 1,
-    padding: "8px 10px",
-    borderRadius: 8,
-    border: "1px solid #d3d1c7",
-    fontSize: 14,
-  },
-  gameTitle: {
-    fontSize: 18,
-    fontWeight: 700,
-    margin: "0 0 6px",
-  },
-  gameDesc: {
-    fontSize: 13,
-    color: "#5f5e5a",
-    margin: "0 0 0.5rem",
-    lineHeight: 1.6,
-  },
-  diceResultRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-    margin: "1rem 0",
-  },
-  rpsResultRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-    margin: "0.5rem 0 1rem",
-  },
-  diceFace: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 4,
-  },
-  diceGlyph: {
-    fontSize: 40,
-  },
-  diceLabel: {
-    fontSize: 12,
-    color: "#5f5e5a",
-  },
-  vsText: {
-    fontSize: 13,
-    fontWeight: 700,
-    color: "#888780",
-  },
-  scratchCard: {
-    background: "#f4f1ea",
-    border: "2px dashed #d3d1c7",
-    borderRadius: 16,
-    minHeight: 120,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    marginTop: "0.5rem",
-  },
-  scratchEmoji: {
-    fontSize: 48,
-  },
-  scratchBig: {
-    fontSize: 22,
-    fontWeight: 700,
-    margin: 0,
-  },
-  scratchPrize: {
-    fontSize: 24,
-    fontWeight: 700,
-    color: "#3b6d11",
-    margin: "6px 0 0",
-  },
-  rpsButtonRow: {
-    display: "flex",
-    gap: 8,
-    marginTop: "1rem",
-  },
-  rpsButton: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 4,
-    padding: "12px 8px",
-  },
-  notice: {
-    fontSize: 13,
-    color: "#993c1d",
-    marginTop: 8,
-  },
-  moleStatusRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: 13,
-    fontWeight: 600,
-    margin: "0.5rem 0",
-  },
-  moleStat: {
-    color: "#5f5e5a",
-  },
-  moleGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 8,
-  },
-  moleHole: {
-    aspectRatio: "1 / 1",
-    borderRadius: "50%",
-    border: "2px solid #d3d1c7",
-    background: "#e1ddd0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    padding: 0,
-  },
-  lateStartBox: {
-    background: "#f4f1ea",
-    border: "1px solid #d3d1c7",
-    borderRadius: 16,
-    padding: "1.25rem 1rem",
-    textAlign: "center",
-  },
-  lateStartEmoji: {
-    fontSize: 36,
-    margin: "0 0 8px",
-  },
-  lateStartText: {
-    fontSize: 12,
-    color: "#5f5e5a",
-    lineHeight: 1.8,
-    margin: "0 0 1rem",
-  },
-  lateTopBar: {
-    display: "flex",
-    gap: 8,
-    marginBottom: 8,
-  },
-  lateStat: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-    background: "#f4f1ea",
+    padding: '10px 12px',
     borderRadius: 10,
-    padding: "6px 10px",
-  },
-  lateStatLabel: {
-    fontSize: 11,
-    color: "#5f5e5a",
-  },
-  lateStatValue: {
+    border: '1px solid #e5e5ea',
     fontSize: 15,
-    fontWeight: 700,
+    background: '#fff',
+    color: '#1c1c1e',
+    outline: 'none',
   },
-  gaugeTrack: {
-    width: "100%",
-    height: 8,
-    borderRadius: 4,
-    background: "#e1ddd0",
-    overflow: "hidden",
+  /* ─── 게임 공통 ─── */
+  gameTitle: { fontSize: 20, fontWeight: 700, margin: '0 0 6px', letterSpacing: '-0.3px' },
+  gameDesc: { fontSize: 13, color: '#8e8e93', margin: '0 0 16px', lineHeight: 1.6 },
+  diceResultRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, margin: '1.25rem 0' },
+  rpsResultRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, margin: '0.75rem 0 1.25rem' },
+  diceFace: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 },
+  diceGlyph: { fontSize: 44 },
+  diceLabel: { fontSize: 12, color: '#8e8e93' },
+  vsText: { fontSize: 13, fontWeight: 700, color: '#c7c7cc' },
+  /* ─── 복권 ─── */
+  scratchCard: {
+    background: '#fff',
+    border: '1.5px dashed #c7c7cc',
+    borderRadius: 18,
+    minHeight: 130,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    marginTop: '0.5rem',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
   },
-  gaugeFill: {
-    height: "100%",
-    background: "linear-gradient(90deg, #ffb86b, #ff6b6b)",
-    borderRadius: 4,
-    transition: "width 0.1s linear",
+  scratchEmoji: { fontSize: 52 },
+  scratchBig: { fontSize: 22, fontWeight: 700, margin: 0, color: '#1c1c1e' },
+  scratchPrize: { fontSize: 26, fontWeight: 700, color: '#34c759', margin: '6px 0 0' },
+  /* ─── 가위바위보 ─── */
+  rpsButtonRow: { display: 'flex', gap: 10, marginTop: '1rem' },
+  rpsButton: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '14px 8px', borderRadius: 14 },
+  /* ─── 알림 ─── */
+  notice: { fontSize: 13, color: '#ff3b30', marginTop: 8 },
+  /* ─── 두더지 ─── */
+  moleStatusRow: { display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600, margin: '0 0 10px', padding: '10px 14px', background: '#fff', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' },
+  moleStat: { color: '#8e8e93' },
+  moleGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 },
+  moleHole: {
+    aspectRatio: '1 / 1',
+    borderRadius: 20,
+    border: 'none',
+    background: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    padding: 0,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
   },
-  lateCanvasWrap: {
-    position: "relative",
-    width: "100%",
-    borderRadius: 12,
-    overflow: "hidden",
-    border: "1px solid #d3d1c7",
-  },
-  lateCanvas: {
-    width: "100%",
-    height: "auto",
-    display: "block",
-  },
-  lateOverlay: {
-    position: "absolute",
-    inset: 0,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    background: "rgba(20, 18, 30, 0.55)",
-    color: "#fff",
-    textAlign: "center",
-    padding: "1rem",
-  },
-  lateOverlayTitle: {
-    fontSize: 18,
-    fontWeight: 700,
-    margin: 0,
-  },
-  lateOverlayScore: {
-    fontSize: 13,
-    margin: 0,
-  },
-  lateControls: {
-    display: "flex",
-    gap: 8,
-    marginTop: 10,
-  },
-  lateJumpButton: {
-    flex: 2,
-    fontSize: 16,
-    padding: "14px 16px",
-  },
-  ticketTypeRow: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 8,
-    margin: "0.75rem 0",
-  },
-  ticketTypeButton: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 4,
-    padding: "10px 6px",
-    borderRadius: 12,
-    border: "1px solid #d3d1c7",
-    background: "#fff",
-    cursor: "pointer",
-    textAlign: "center",
-  },
-  ticketTypeButtonActive: {
-    borderColor: "#26215c",
-    background: "#f0eefc",
-  },
-  ticketTypeLabel: {
-    fontSize: 13,
-    fontWeight: 700,
-  },
-  ticketTypeCost: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#26215c",
-  },
-  ticketTypeDesc: {
-    fontSize: 10,
-    color: "#5f5e5a",
-    lineHeight: 1.4,
-  },
-  outfitPreviewWrap: {
-    display: "flex",
-    justifyContent: "center",
-    background: "#f4f1ea",
-    borderRadius: 16,
-    padding: "1rem 0",
-    marginBottom: "0.75rem",
-  },
-  outfitRow: {
-    marginBottom: "0.6rem",
-  },
-  outfitRowTitle: {
-    fontSize: 13,
-    fontWeight: 600,
-    margin: "0 0 6px",
-  },
-  outfitOptionGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 8,
-  },
-  outfitOptionButton: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 4,
-    padding: "8px 4px",
-    borderRadius: 12,
-    border: "1px solid #d3d1c7",
-    background: "#fff",
-    cursor: "pointer",
-  },
-  outfitOptionButtonActive: {
-    borderColor: "#26215c",
-    background: "#f0eefc",
-  },
-  outfitOptionEmoji: {
-    fontSize: 20,
-  },
-  outfitOptionLabel: {
-    fontSize: 11,
-    textAlign: "center",
-    lineHeight: 1.3,
-  },
-  outfitResultBox: {
-    marginTop: "0.75rem",
-    background: "#f4f1ea",
-    borderRadius: 12,
-    padding: "0.75rem 1rem",
-    textAlign: "center",
-  },
-  outfitResultComment: {
-    fontSize: 13,
-    margin: "0 0 4px",
-  },
-  outfitResultCost: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: "#993c1d",
-    margin: 0,
-  },
+  /* ─── 복권 타입 ─── */
+  ticketTypeRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, margin: '0 0 14px' },
+  ticketTypeButton: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '12px 6px', borderRadius: 14, border: '1.5px solid #e5e5ea', background: '#fff', cursor: 'pointer', textAlign: 'center' },
+  ticketTypeButtonActive: { borderColor: '#007aff', background: '#f0f7ff' },
+  ticketTypeLabel: { fontSize: 12, fontWeight: 700, color: '#1c1c1e' },
+  ticketTypeCost: { fontSize: 12, fontWeight: 600, color: '#007aff' },
+  ticketTypeDesc: { fontSize: 10, color: '#8e8e93', lineHeight: 1.4 },
+  /* ─── 지각탈출 ─── */
+  lateStartBox: { background: '#fff', borderRadius: 18, padding: '1.5rem 1rem', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' },
+  lateStartEmoji: { fontSize: 40, margin: '0 0 10px' },
+  lateStartText: { fontSize: 12, color: '#8e8e93', lineHeight: 1.9, margin: '0 0 1.25rem' },
+  lateTopBar: { display: 'flex', gap: 8, marginBottom: 10 },
+  lateStat: { flex: 1, display: 'flex', flexDirection: 'column', gap: 4, background: '#fff', borderRadius: 12, padding: '8px 10px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' },
+  lateStatLabel: { fontSize: 10, color: '#8e8e93', fontWeight: 500 },
+  lateStatValue: { fontSize: 15, fontWeight: 700, color: '#1c1c1e' },
+  gaugeTrack: { width: '100%', height: 6, borderRadius: 3, background: '#e9e9eb', overflow: 'hidden', marginTop: 2 },
+  gaugeFill: { height: '100%', background: 'linear-gradient(90deg, #ff9500, #ff3b30)', borderRadius: 3, transition: 'width 0.1s linear' },
+  lateCanvasWrap: { position: 'relative', width: '100%', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
+  lateCanvas: { width: '100%', height: 'auto', display: 'block' },
+  lateOverlay: { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, background: 'rgba(0,0,0,0.48)', color: '#fff', textAlign: 'center', padding: '1rem', backdropFilter: 'blur(4px)' },
+  lateOverlayTitle: { fontSize: 20, fontWeight: 700, margin: 0 },
+  lateOverlayScore: { fontSize: 15, margin: 0, opacity: 0.9 },
+  lateControls: { display: 'flex', gap: 10, marginTop: 12 },
+  lateJumpButton: { flex: 2, fontSize: 17, padding: '16px 16px' },
+  /* ─── 옷입히기 ─── */
+  outfitPreviewWrap: { display: 'flex', justifyContent: 'center', background: '#fff', borderRadius: 18, padding: '1.25rem 0', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' },
+  outfitRow: { marginBottom: '0.75rem' },
+  outfitRowTitle: { fontSize: 13, fontWeight: 600, margin: '0 0 8px', color: '#1c1c1e' },
+  outfitOptionGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 },
+  outfitOptionButton: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '10px 4px', borderRadius: 14, border: '1.5px solid #e5e5ea', background: '#fff', cursor: 'pointer' },
+  outfitOptionButtonActive: { borderColor: '#007aff', background: '#f0f7ff' },
+  outfitOptionEmoji: { fontSize: 22 },
+  outfitOptionLabel: { fontSize: 10, textAlign: 'center', lineHeight: 1.3, color: '#3a3a3c' },
+  outfitResultBox: { marginTop: '1rem', background: '#fff5f5', borderRadius: 14, padding: '0.9rem 1rem', textAlign: 'center' },
+  outfitResultComment: { fontSize: 13, margin: '0 0 4px', color: '#3a3a3c' },
+  outfitResultCost: { fontSize: 17, fontWeight: 700, color: '#ff3b30', margin: 0 },
 };

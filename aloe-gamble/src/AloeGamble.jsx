@@ -208,7 +208,7 @@ function HomeScreen({ onNavigate, balance }) {
     {
       id: "outfit",
       title: "반재영 옷입히기",
-      desc: "공주/거지/갸루 스타일을 믹스매치! 어떤 조합이든 코디비는 빠져나가요.",
+      desc: "공주/거지/갸루 스타일을 믹스매치! 반재영을 내 스타일대로 코디해봐요.",
       icon: "👗",
     },
   ];
@@ -1538,23 +1538,23 @@ function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
     let comment;
     if (dominant[1] === 4) {
       if (dominant[0] === "princess") {
-        comment = "완벽한 공주님 반재영 등장! 그래도 코디비는 받을게요";
+        comment = "완벽한 공주님 반재영 등장! ✨";
       } else if (dominant[0] === "beggar") {
-        comment = "리얼 거지 컨셉 완성... 스타일링비조차 아까운 비주얼이네요";
+        comment = "리얼 거지 컨셉 완성... 나름 힙한 비주얼이에요 😂";
       } else {
-        comment = "찐 갸루 반재영 탄생! 스타일 비용은 별도예요";
+        comment = "찐 갸루 반재영 탄생! 개성 넘치는 스타일이에요 💅";
       }
     } else if (dominant[1] >= 3) {
-      comment = `${OUTFIT_SET_LABELS[dominant[0]]} 느낌이 강한 코디네요! 코디비는 동일하게 빠져나가요`;
+      comment = `${OUTFIT_SET_LABELS[dominant[0]]} 느낌이 강한 코디네요!`;
     } else {
-      comment = "공주·거지·갸루가 섞인 독특한 믹스매치 코디예요";
+      comment = "공주·거지·갸루가 섞인 독특한 믹스매치 코디예요 🔥";
     }
 
     setResult({
       cost: OUTFIT_STYLING_COST,
       comment,
     });
-    setMessage(`${comment} (-${OUTFIT_STYLING_COST.toLocaleString()}원)`);
+    setMessage(`${comment}`);
     setAloeFace("smug");
   }
 
@@ -1563,8 +1563,7 @@ function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
       <h3 style={styles.gameTitle}>👗 반재영 옷입히기</h3>
       <p style={styles.gameDesc}>
         머리·상의·하의·신발을 공주/거지/갸루 스타일끼리 자유롭게 믹스매치해서
-        반재영을 코디해보세요. 어떤 조합이든 코디비{" "}
-        {OUTFIT_STYLING_COST.toLocaleString()}원은 빠져나가요.
+        반재영을 코디해보세요.
       </p>
 
       <div style={styles.outfitPreviewWrap}>
@@ -1599,9 +1598,6 @@ function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
       {result && (
         <div style={styles.outfitResultBox}>
           <p style={styles.outfitResultComment}>{result.comment}</p>
-          <p style={styles.outfitResultCost}>
-            -{result.cost.toLocaleString()}원
-          </p>
         </div>
       )}
 
@@ -1617,7 +1613,7 @@ function OutfitGame({ balance, adjustBalance, setMessage, setAloeFace }) {
         disabled={balance < OUTFIT_STYLING_COST}
         onClick={finishStyling}
       >
-        코디 완성하기 (-{OUTFIT_STYLING_COST.toLocaleString()}원)
+        코디 완성하기
       </button>
       {balance < OUTFIT_STYLING_COST && (
         <p style={styles.notice}>게임머니가 부족해요!</p>
@@ -1664,21 +1660,21 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
     gap: 0,
-    background: 'rgba(255,255,255,0.82)',
+    background: 'rgba(255,255,255,0.92)',
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
     borderBottom: '0.5px solid rgba(60,60,67,0.12)',
-    padding: '4px 8px 6px',
+    padding: '6px 8px 8px',
     marginBottom: '0',
     position: 'sticky',
     top: 57,
     zIndex: 9,
   },
   tabButton: {
-    padding: '6px 4px',
-    fontSize: 10,
+    padding: '8px 4px',
+    fontSize: 12,
     fontWeight: 500,
-    borderRadius: 8,
+    borderRadius: 10,
     border: 'none',
     background: 'transparent',
     cursor: 'pointer',
@@ -1686,6 +1682,7 @@ const styles = {
     whiteSpace: 'nowrap',
     textAlign: 'center',
     letterSpacing: '-0.1px',
+    lineHeight: 1.3,
   },
   tabButtonActive: {
     background: '#e9e9eb',
